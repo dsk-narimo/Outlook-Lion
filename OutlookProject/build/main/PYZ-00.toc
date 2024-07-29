@@ -1,0 +1,2 @@
+('C:\\PythonProgram\\Outlook-Project\\outlookproject\\build\\main\\PYZ-00.pyz',
+ [])
