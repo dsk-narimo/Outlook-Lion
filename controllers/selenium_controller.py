@@ -62,15 +62,15 @@ class SeleniumController:
                 password_field = driver.find_element(By.CSS_SELECTOR, '#dlPassword')
                 password_field.send_keys(password_dict[key])
                 # #ダウンロードボタンを探し押下する
-                # download_button = driver.find_element(By.CSS_SELECTOR, "#submitbutton")
-                # download_button.click()
+                download_button = driver.find_element(By.CSS_SELECTOR, "#submitbutton")
+                download_button.click()
 
-                # #ダウンロード確認ページから保存ファイルを選択
-                # download_link = driver.find_element(By.CSS_SELECTOR, "#shadow > table > tbody > tr > td > form > div.box2 > table > tbody > tr > td:nth-child(1) > div:nth-child(1) > table > tbody > tr:nth-child(2) > td:nth-child(1) > div > div > a")
-                # download_link.click()
+                #ダウンロード確認ページから保存ファイルを選択
+                download_link = driver.find_element(By.CSS_SELECTOR, "#shadow > table > tbody > tr > td > form > div.box2 > table > tbody > tr > td:nth-child(1) > div:nth-child(1) > table > tbody > tr:nth-child(2) > td:nth-child(1) > div > div > a")
+                download_link.click()
 
                 #ダウンロード完了まえ待機
-                time.sleep(5)
+                time.sleep(8)
                 driver.quit()
 
                 #ダウンロードファイルを取得

@@ -44,6 +44,7 @@ missing module named 'win32com.gen_py' - imported by win32com (conditional, opti
 missing module named PIL - imported by PyPDF2.filters (delayed, optional)
 missing module named 'Crypto.Util' - imported by PyPDF2._encryption (optional)
 missing module named Crypto - imported by PyPDF2._encryption (optional)
+missing module named models - imported by C:\PythonProgram\Outlook-Lion\main.py (top-level)
 missing module named 'controllers.selenium_controller' - imported by C:\PythonProgram\Outlook-Lion\main.py (top-level)
 missing module named 'controllers.outlook_processor' - imported by C:\PythonProgram\Outlook-Lion\main.py (top-level)
 missing module named controllers - imported by C:\PythonProgram\Outlook-Lion\main.py (top-level)

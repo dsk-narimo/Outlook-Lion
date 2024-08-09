@@ -23,19 +23,34 @@ sys.path.insert(0, project_root)
 from controllers.outlook_controller import OutlookController
 from controllers.outlook_processor import OutlookProcessor
 from controllers.selenium_controller import SeleniumController
+from models.exists_checker import FolderExistsCheck,AddressExistsCheck
 
 
 #メインスクリプト
 def main():
     try:
+        # # 設定を直接定義
+        # settings = {
+        #     "受信者アドレス": "dsk_gyoumu@daishinkogyo.co.jp",
+        #     "送信者アドレス": "lion_order@lion-jimuki.co.jp",
+        #     "受信フォルダ名": "LION（FTS）",
+        #     "PDF保存先パス": "\\\\192.168.175.4\\fax\\本社\\受信FAX\\本社_大熊\\LION(FTS)\\注文書出力分",
+        #     "CSV保存先パス": "\\\\192.168.175.4\\業務課\\OKUMA\\LIONETサービス(新）",
+        #     "PDFパスワード件名": "[パスワードの通知] ご注文書",
+        #     "PDF注文書件名": "ご注文書",
+        #     "CSVパスワード件名": "パスワード通知",
+        #     "CSV注文書件名": "ご注文データの送付",
+        #     "処理後移動先フォルダ名": "LION（FTS）処理済",
+        #     "Edgeドライバー": "msedgedriver.exe"
+        # }
         
-# 設定を直接定義
+        #テスト用
         settings = {
             "受信者アドレス": "tatsuya_narimo@daishinkogyo.co.jp",
             "送信者アドレス": "lion_order@lion-jimuki.co.jp",
             "受信フォルダ名": "テスト",
             "PDF保存先パス": "\\\\192.168.175.4\\SourceTree\\pdf3",
-            "CSV保存先パス": "\\\\192.168.175.4\\SourceTree\\csv",
+            "CSV保存先パス": "\\\\192.168.175.4\\SourceTree\\csv3",
             "PDFパスワード件名": "[パスワードの通知] ご注文書",
             "PDF注文書件名": "ご注文書",
             "CSVパスワード件名": "パスワード通知",
@@ -55,6 +70,15 @@ def main():
         csv_order_subject = settings['CSV注文書件名']
         remove_folder_name = settings['処理後移動先フォルダ名']
         driver_path = settings['Edgeドライバー']
+        
+        #保存フォルダの存在チェック
+        if not FolderExistsCheck.check_folder_exists(pdf_save_path):
+            print(f"PDF保存先フォルダが存在しません。フォルダ構成変更してないか確認してください。: {pdf_save_path}")
+            return
+
+        if not FolderExistsCheck.check_folder_exists(csv_save_path):
+            print(f"CSV保存先フォルダが存在しません。フォルダ構成変更してないか確認してください。: {csv_save_path}")
+            return
 
         
         pdf_password_dict ={
@@ -76,16 +100,7 @@ def main():
             "ダウンロードパスワード":  r"ダウンロードパスワード\s*：\s*([^\s]+)",
             "パスワード":  r"ZIPファイル解凍のパスワード\s*：\s*([^\s]+)",
         }
-
-        print("zipファイルの保存・解凍処理を開始します。")
-        print('\n')
-
-        # デバッグ時とパッケージ化時のパスを設定
-        if getattr(sys, 'frozen', False):
-            driver_path = os.path.basename(driver_path)  # PyInstallerの場合はファイル名のみ
-        else:
-            driver_path = os.path.join(os.path.dirname(__file__), driver_path)
-        
+ 
         #インスタンス生成
         outlook_processor = OutlookProcessor(folder_name,
                                             pdf_save_path,
@@ -104,42 +119,97 @@ def main():
             
         selenium_processor = SeleniumController(driver_path,csv_save_path)
         
+        if not FolderExistsCheck.check_file_exists(driver_path):
+            print(f"edgeドライバーが存在しません。管理者に問い合わせてください。: {driver_path}")
+            return
+        
+        # 受信フォルダが存在するかチェックして指定
+        account = None
+        for acc in outlook_controller.outlook.Folders:
+            if acc.Name == receive_address:
+                account = acc
+                break
+
+        if account is None:
+            print(f"受信アドレス {receive_address} が見つかりません")
+            return
+
+        receive_folder_exists = AddressExistsCheck.folder_exists(account, folder_name)
+        if not receive_folder_exists:
+            print(f"受信フォルダ {folder_name} が見つかりません")
+            return
+        
+        remove_folder_exists = AddressExistsCheck.folder_exists(account, remove_folder_name)
+        if not remove_folder_exists:
+            print(f"処理済み格納フォルダ {remove_folder_name} が見つかりません")
+            return
+
+        # フォルダを取得
+        folder = None
+        for f in account.Folders:
+            if f.Name == folder_name:
+                folder = f
+                break
+
+        # 送信者アドレスが存在するかチェック
+        sender_exists = AddressExistsCheck.check_sender_exists(folder, sender_address)
+        if not sender_exists:
+            print(f"送信者アドレス {sender_address} からのメールが見つかりません")
+            return
+        
+        print("zipファイルの保存・解凍処理を開始します。")
+        print('\n')
+        
+        #処理済メールの移動先を指定
+        recipient_account = outlook_controller.outlook.Folders(receive_address)
+        deleted_items_folder = recipient_account.Folders(remove_folder_name)
+        
         #対象メールをインポート
-        target_mails = outlook_controller.import_target_mail(folder_name,sender_address,receive_address)
+        target_mails = outlook_controller.import_target_mail(folder,sender_address,receive_address)
 
         print("LION事務器ダウンロード用URLにアクセスし解凍処理を開始します。")
         print('------ダウンロード中です(※以下メッセージは無視してください)------')
         #パスワードメールからDLパスワード、ZIP解凍パスワード、CSV名を取得
-        csv_password_dict,url_password_dict = outlook_processor.get_password_info(csv_password_subject,csv_password_dict,target_mails)
+        csv_password_dict,url_password_dict,finished_cvs_mails = outlook_processor.get_password_info(csv_password_subject,csv_password_dict,target_mails)
         
         #注文書メールからダウンロードURLを抽出
-        csv_order_dict = outlook_processor.get_csv_info(csv_order_subject,csv_order_dict,target_mails)
+        csv_order_dict,finished_url_mails = outlook_processor.get_csv_info(csv_order_subject,csv_order_dict,target_mails)
 
         #ダウンロードURLからZIPファイルをダウンロード
         download_zip_dict = selenium_processor.download_file(csv_order_dict, url_password_dict)
+        
         print('\n')
         print('------ダウンロード終了-------')
         print('\n')
         print('------解凍処理開始-------')
         #帳票番号との紐づけからZIPファイルの解凍
-        outlook_processor.extract_and_save_zip_files(download_zip_dict, csv_password_dict,csv_save_path)
-        
+        finished_keys = []
+        finished_keys = outlook_processor.extract_and_save_zip_files(download_zip_dict, csv_password_dict,csv_save_path)
+
+        #処理済メールの移動処理
+        moved_csv_mail_count = outlook_controller.move_to_folder(finished_keys,finished_cvs_mails,finished_url_mails,deleted_items_folder)
+        print((f"注文データCSV保存件数：{moved_csv_mail_count}件"))
+        print('\n')
         #パスワードメールから帳票番号とパスワード抽出
-        pdf_password_dict,null_dict = outlook_processor.get_password_info(pdf_password_subject,pdf_password_dict,target_mails)
+        pdf_password_dict,null_dict,finished_pass_mails = outlook_processor.get_password_info(pdf_password_subject,pdf_password_dict,target_mails)
 
         #注文メールから帳票番号を抽出と添付ファイルの保存
-        pdf_order_dict = outlook_processor.get_pdf_info(pdf_order_subject,pdf_order_dict,target_mails,pdf_save_path)
+        pdf_order_dict,finished_pdf_mails = outlook_processor.get_pdf_info(pdf_order_subject,pdf_order_dict,target_mails,pdf_save_path)
 
         #帳票番号との紐づけからZIPファイルの解凍
-        outlook_processor.extract_and_save_zip_files(pdf_order_dict, pdf_password_dict,pdf_save_path)
+        finished_keys = []
+        finished_keys = outlook_processor.extract_and_save_zip_files(pdf_order_dict, pdf_password_dict,pdf_save_path)
+        
+        #処理済メールの移動処理
+        moved_pdf_mail_count = outlook_controller.move_to_folder(finished_keys,finished_pdf_mails,finished_pass_mails,deleted_items_folder)
 
+        print(f"注文書PDF保存件数：{moved_pdf_mail_count}件")
+        
     except Exception as e:
-        with open("error_log.txt", "w") as f:
-            f.write("Error: " + str(e) + "\n")
         print("Error: " + str(e) + "\n")
     finally:
         print('\n')
-        input("処理終了。Enterを押して閉じてOKです")
+        input("処理終了。Enterを押して閉じてOKです。")
 
 
 # def load_config():

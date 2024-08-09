@@ -44,6 +44,7 @@ class OutlookProcessor:
         url_password_dict = {}
         recipient_account = self.outlook_controller.outlook.Folders(self.receive_address)
         deleted_items_folder = recipient_account.Folders(self.remove_folder_name)
+        finished_mails = []
         for email in emails:
             if subject == email.subject_name:
                 info = {}
@@ -55,16 +56,10 @@ class OutlookProcessor:
                     zip_password_dict[info["帳票番号"]] = info['パスワード'].strip('"')
                     if "ダウンロードパスワード" in info:
                         url_password_dict[info["帳票番号"]] = info['ダウンロードパスワード'].strip('"')
+                        
+                    finished_mails.append(email)
 
-                    try:
-                        # メールを削除済みアイテムフォルダに移動
-                        email.message.Move(deleted_items_folder)
-                    except Exception as e:
-                        # エラーが発生した場合はそのメールの処理をスキップ
-                        print(f"メール移動失敗: {e}")
-                        continue
-
-        return zip_password_dict, url_password_dict
+        return zip_password_dict, url_password_dict,finished_mails
 
 
     def get_pdf_info(self, subject, patterns,emails,pdf_save_path):
@@ -77,6 +72,7 @@ class OutlookProcessor:
         order_file_dict = {}
         recipient_account = self.outlook_controller.outlook.Folders(self.receive_address)
         deleted_items_folder = recipient_account.Folders(self.remove_folder_name)
+        finished_mails = []
         for email in emails:
             if subject == email.subject_name:
                 info = {}
@@ -89,16 +85,19 @@ class OutlookProcessor:
                     for attachment in email.attached_files:
                         #zipファイルの保存パスを辞書登録
                         order_file_dict[info["帳票番号"]] = os.path.join(pdf_save_path, attachment.FileName)
-                
-                    try:
-                        # メールを削除済みアイテムフォルダに移動
-                        email.message.Move(deleted_items_folder)
-                    except Exception as e:
-                        # エラーが発生した場合はそのメールの処理をスキップ
-                        print(f"メール移動失敗: {e}")
-                        continue
 
-        return order_file_dict
+                        finished_mails.append(email)
+                        
+                    #TODO
+                    # try:
+                    #     # メールを削除済みアイテムフォルダに移動
+                    #     email.message.Move(deleted_items_folder)
+                    # except Exception as e:
+                    #     # エラーが発生した場合はそのメールの処理をスキップ
+                    #     print(f"メール移動失敗: {e}")
+                    #     continue
+
+        return order_file_dict,finished_mails
     
     def get_csv_info(self, subject, patterns,emails):
         """
@@ -111,6 +110,7 @@ class OutlookProcessor:
         order_file_dict = {}
         recipient_account = self.outlook_controller.outlook.Folders(self.receive_address)
         deleted_items_folder = recipient_account.Folders(self.remove_folder_name)
+        finished_mails = []
         for email in emails:
             if subject in email.subject_name:
                 info = {}
@@ -121,16 +121,18 @@ class OutlookProcessor:
                 if "帳票番号" in info:
                     #zipファイルの保存パスを辞書登録
                     order_file_dict[info["帳票番号"]] = info['ダウンロードURL']
+                    
+                    finished_mails.append(email)
+                    #TODO:
+                    # try:
+                    #     # メールを削除済みアイテムフォルダに移動
+                    #     email.message.Move(deleted_items_folder)
+                    # except Exception as e:
+                    #     # エラーが発生した場合はそのメールの処理をスキップ
+                    #     print(f"メール移動失敗: {e}")
+                    #     continue
 
-                    try:
-                        # メールを削除済みアイテムフォルダに移動
-                        email.message.Move(deleted_items_folder)
-                    except Exception as e:
-                        # エラーが発生した場合はそのメールの処理をスキップ
-                        print(f"メール移動失敗: {e}")
-                        continue
-
-        return order_file_dict
+        return order_file_dict,finished_mails
 
 
     def extract_and_save_zip_files(self, order_file_dict, password_dict,save_path):
@@ -140,6 +142,7 @@ class OutlookProcessor:
         :param password_dict
         :return:
         """
+        finished_keys = []
         for key in order_file_dict:
 
             target_password = None
@@ -148,4 +151,9 @@ class OutlookProcessor:
                 target_password = password_dict[key]
                 zip_path = order_file_dict[key]
                 extract_to = save_path  # 解凍先を保存ディレクトリに変更
-                ZipFileHandler.extract_zip(zip_path, target_password, extract_to)
+                extract_result = ZipFileHandler.extract_zip(zip_path, target_password, extract_to)
+                
+                if extract_result:
+                    finished_keys.append(key)
+                    
+        return finished_keys
