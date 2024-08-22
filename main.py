@@ -29,35 +29,35 @@ from models.exists_checker import FolderExistsCheck,AddressExistsCheck
 #メインスクリプト
 def main():
     try:
-        # # 設定を直接定義
-        # settings = {
-        #     "受信者アドレス": "dsk_gyoumu@daishinkogyo.co.jp",
-        #     "送信者アドレス": "lion_order@lion-jimuki.co.jp",
-        #     "受信フォルダ名": "LION（FTS）",
-        #     "PDF保存先パス": "\\\\192.168.175.4\\fax\\本社\\受信FAX\\本社_大熊\\LION(FTS)\\注文書出力分",
-        #     "CSV保存先パス": "\\\\192.168.175.4\\業務課\\OKUMA\\LIONETサービス(新）",
-        #     "PDFパスワード件名": "[パスワードの通知] ご注文書",
-        #     "PDF注文書件名": "ご注文書",
-        #     "CSVパスワード件名": "パスワード通知",
-        #     "CSV注文書件名": "ご注文データの送付",
-        #     "処理後移動先フォルダ名": "LION（FTS）処理済",
-        #     "Edgeドライバー": "msedgedriver.exe"
-        # }
-        
-        #テスト用
+        # 設定を直接定義
         settings = {
-            "受信者アドレス": "tatsuya_narimo@daishinkogyo.co.jp",
+            "受信者アドレス": "dsk_gyoumu@daishinkogyo.co.jp",
             "送信者アドレス": "lion_order@lion-jimuki.co.jp",
-            "受信フォルダ名": "テスト",
-            "PDF保存先パス": "\\\\192.168.175.4\\SourceTree\\pdf3",
-            "CSV保存先パス": "\\\\192.168.175.4\\SourceTree\\csv3",
+            "受信フォルダ名": "LION（FTS）",
+            "PDF保存先パス": "\\\\192.168.175.4\\fax\\本社\\受信FAX\\本社_大熊\\LION(FTS)\\注文書出力分",
+            "CSV保存先パス": "\\\\192.168.175.4\\業務課\\OKUMA\\LIONETサービス(新）",
             "PDFパスワード件名": "[パスワードの通知] ご注文書",
             "PDF注文書件名": "ご注文書",
             "CSVパスワード件名": "パスワード通知",
             "CSV注文書件名": "ご注文データの送付",
-            "処理後移動先フォルダ名": "削除済みアイテム",
+            "処理後移動先フォルダ名": "LION（FTS）処理済",
             "Edgeドライバー": "msedgedriver.exe"
         }
+        
+        # #テスト用
+        # settings = {
+        #     "受信者アドレス": "tatsuya_narimo@daishinkogyo.co.jp",
+        #     "送信者アドレス": "lion_order@lion-jimuki.co.jp",
+        #     "受信フォルダ名": "テスト",
+        #     "PDF保存先パス": "\\\\192.168.175.4\\SourceTree\\pdf3",
+        #     "CSV保存先パス": "\\\\192.168.175.4\\SourceTree\\csv3",
+        #     "PDFパスワード件名": "[パスワードの通知] ご注文書",
+        #     "PDF注文書件名": "ご注文書",
+        #     "CSVパスワード件名": "パスワード通知",
+        #     "CSV注文書件名": "ご注文データの送付",
+        #     "処理後移動先フォルダ名": "削除済みアイテム",
+        #     "Edgeドライバー": "msedgedriver.exe"
+        # }
 
         receive_address = settings['受信者アドレス']
         sender_address = settings['送信者アドレス']

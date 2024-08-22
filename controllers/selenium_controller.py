@@ -20,8 +20,8 @@ class SeleniumController:
             # 通常の実行の場合
             self.driver_path = driver_path
             self.csv_save_path = csv_save_path
-            print(f"Current working directory: {os.getcwd()}")
-            print(f"Driver path exists: {os.path.exists(driver_path)}")
+            #print(f"Current working directory: {os.getcwd()}")
+            #print(f"Driver path exists: {os.path.exists(driver_path)}")
 
     def download_file(self,order_dict,password_dict):
 
